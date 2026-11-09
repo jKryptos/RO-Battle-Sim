@@ -15,4 +15,4 @@ func calculate_current_attack_power():
 	current_attack_power = base_attack_power + strength_component.current_strength
 
 func calculate_damage() -> int:
-	return roundi(current_attack_power * randf_range(0.6, 1.1))
+	return roundi(current_attack_power * randf_range(0.7, 1.5))
