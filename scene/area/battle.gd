@@ -37,6 +37,8 @@ func spawn_enemy() -> void:
 	enemy = enemies.pick_random().instantiate()
 	enemy_health = enemy.get_node("StatComponent/HealthComponent")
 	enemy_health.dead.connect(_on_enemy_dead)
+	enemy.damage_dealt.connect(_on_enemy_damage_dealt)
+	enemy.life_gained.connect(_on_enemy_life_gained)
 	enemy_spawn.add_child(enemy)
 	enemy_dead = false
 	enemy_health_bar.show()
@@ -48,6 +50,8 @@ func spawn_player() -> void:
 	player = preload("res://Scene/Entity/player.tscn").instantiate()
 	player_health = player.get_node("StatComponent/HealthComponent")
 	player_health.dead.connect(_on_player_dead)
+	player.damage_dealt.connect(_on_player_damage_dealt)
+	player.life_gained.connect(_on_player_life_gained)
 	player_spawn.add_child(player)
 	player_health_bar.max_value = player_health.max_health
 	player_health_bar.value = player_health.health
@@ -73,12 +77,22 @@ func _on_fight_button_pressed() -> void:
 	start_battle()
 
 func _on_player_combat_timer_timeout() -> void:
-	var damage_dealt = player.attack()
-	do_attack(enemy_health_bar, enemy_health_label, enemy_health, enemy_floating_damage_number, damage_dealt, enemy)
+	player.attack()
 
 func _on_enemy_combat_timer_timeout() -> void:
-	var damage_dealt = enemy.attack()
-	do_attack(player_health_bar, player_health_label, player_health, player_floating_damage_number, damage_dealt, player)
+	enemy.attack()
+
+func _on_enemy_damage_dealt(damage: int):
+	do_attack(player_health_bar, player_health_label, player_health, player_floating_damage_number, damage, player)
+
+func _on_player_damage_dealt(damage: int):
+	do_attack(enemy_health_bar, enemy_health_label, enemy_health, enemy_floating_damage_number, damage, enemy)
+
+func _on_enemy_life_gained(life: int) -> void:
+	do_heal(enemy_health_bar, enemy_health_label, enemy_health, enemy_floating_healing_number, life, enemy)
+
+func _on_player_life_gained(life: int) -> void:
+	do_heal(player_health_bar, player_health_label, player_health, player_floating_healing_number, life, player)
 
 func _on_player_dead():
 	player_dead = true
@@ -91,8 +105,7 @@ func _on_enemy_dead():
 	end_battle()
 
 func after_battle_healing() -> void:
-	var health_restored: int = 999
-	do_heal(player_health_bar, player_health_label, player_health, player_floating_healing_number, health_restored, player)
+	player.life_gained.emit(999)
 
 func start_timers() -> void:
 	$PlayerCombatTimer.start()
@@ -132,7 +145,7 @@ func new_floating_healing_number(number: Label, amount: int, target: Node2D) -> 
 
 	$HealingNumbers/FloatingNumber.add_child(new_number)
 	new_number.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	new_number.global_position = target.global_position + Vector2(0, -150)
+	new_number.global_position = target.global_position + Vector2(randi_range(-10, 10), -150)
 	new_number.modulate.a = 1.0
 	new_number.show()
 
