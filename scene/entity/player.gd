@@ -2,5 +2,8 @@ extends Node2D
 
 class_name Player
 
-func attack() -> int:
-	return $StatComponent/AttackComponent.calculate_damage()
+signal damage_dealt(damage: int)
+signal life_gained(life: int)
+
+func attack() -> void:
+	damage_dealt.emit($StatComponent/AttackComponent.calculate_damage())
