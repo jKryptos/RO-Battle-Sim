@@ -1,4 +1,4 @@
-extends Statistics
+class_name HealthComponent extends Statistics
 
 var health: int
 @export var max_health: int
