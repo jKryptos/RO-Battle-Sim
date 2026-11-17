@@ -1,7 +1,7 @@
 extends Node2D
 
 #Player nodes
-var player_health
+var player_health: HealthComponent
 @onready var player_spawn = $Combatants/PlayerBox/PlayerSpawn
 @onready var player_health_bar = $Combatants/PlayerBox/PlayerHealth
 @onready var player_health_label = $Combatants/PlayerBox/PlayerHealth/Label
@@ -9,7 +9,7 @@ var player_health
 @onready var player_floating_healing_number = $HealingNumbers/HBoxContainer/PlayerHealingNumber
 
 #Enemy nodes
-var enemy_health
+var enemy_health: HealthComponent
 @onready var enemy_spawn = $Combatants/EnemyBox/EnemySpawn
 @onready var enemy_health_bar = $Combatants/EnemyBox/EnemyHealth
 @onready var enemy_health_label = $Combatants/EnemyBox/EnemyHealth/Label
@@ -17,11 +17,11 @@ var enemy_health
 @onready var enemy_floating_healing_number = $HealingNumbers/HBoxContainer/EnemyHealingNumber
 
 #Combat variables
-var player
-var enemy
-var battle_ongoing: bool
-var player_dead: bool
-var enemy_dead: bool
+var player: Node2D
+var enemy: Node2D
+var battle_ongoing: bool = false
+var player_dead: bool = true
+var enemy_dead: bool = true
 
 var enemies = [
 		preload("res://Scene/Entity/Monsters/Bat/bat.tscn"),
@@ -53,12 +53,13 @@ func spawn_player() -> void:
 	player.damage_dealt.connect(_on_player_damage_dealt)
 	player.life_gained.connect(_on_player_life_gained)
 	player_spawn.add_child(player)
+	player_dead = false
 	player_health_bar.max_value = player_health.max_health
 	player_health_bar.value = player_health.health
 	player_health_label.text = "%d/%d" % [player_health.health, player_health.max_health]
 
 func start_battle() -> void:
-	if battle_ongoing == true or player_dead == true:
+	if battle_ongoing or player_dead:
 		return
 
 	if enemy_dead == true:
@@ -71,7 +72,8 @@ func end_battle() -> void:
 	battle_ongoing = false
 	stop_timers()
 	#Temporary healing after battle, will be replaced with health regen when more stats implemented
-	after_battle_healing()
+	if !player_dead:
+		after_battle_healing()
 
 func _on_fight_button_pressed() -> void:
 	start_battle()
@@ -100,12 +102,13 @@ func _on_player_dead():
 
 func _on_enemy_dead():
 	enemy_dead = true
+	stop_timers()
 	enemy_health_bar.hide()
 	enemy.queue_free()
 	end_battle()
 
 func after_battle_healing() -> void:
-	player.life_gained.emit(999)
+	do_heal(player_health_bar, player_health_label, player_health, player_floating_healing_number, 999, player)
 
 func start_timers() -> void:
 	$PlayerCombatTimer.start()
